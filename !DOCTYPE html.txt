@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>SpaceProbe</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: #0a0f25;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+    header {
+      text-align: center;
+      padding: 30px;
+      font-size: 2.8rem;
+      font-weight: 600;
+      background: linear-gradient(90deg, #1e215d, #02040f);
+    }
+    section {
+      padding: 30px;
+      margin: 0 auto;
+    }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+    .card {
+      background: #1b1f3a;
+      border-radius: 12px;
+      padding: 20px;
+      margin: 10px 0;
+      box-shadow: 0 0 10px rgba(0,0,0,0.6);
+    }
+    input, button {
+      padding: 12px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
+      font-size: 1rem;
+      margin-right: 10px;
+    }
+    button { cursor: pointer; background: #6c5ce7; color: white; }
+    .flex { display: flex; gap: 15px; align-items: center; }
+    .weather-output, .ai-response { margin-top: 20px; }
+    .news-item { border-bottom: 1px solid #3a3f5a; padding: 10px 0; }
+  </style>
+</head>
+
+<body>
+
+  <header>Welcome to SpaceProbe</header>
+
+  <div class="container">
+
+    <section>
+      <h2>🌦 Weather Teller</h2>
+      <div class="flex">
+        <input type="text" id="city" placeholder="Enter city name">
+        <button onclick="getWeather()">Get Weather</button>
+      </div>
+      <div class="weather-output" id="weatherResult"></div>
+    </section>
+
+    <section>
+      <h2>📰 Latest Space & Science News</h2>
+      <div id="newsList"></div>
+    </section>
+
+    <section>
+      <h2>🧠 Ask Space AI</h2>
+      <div class="flex">
+        <input type="text" id="aiQuestion" placeholder="Ask anything about space...">
+        <button onclick="askAI()">Ask AI</button>
+      </div>
+      <div class="ai-response" id="aiAnswer"></div>
+    </section>
+
+  </div>
+
+  <script>
+    // ===== WEATHER =====
+    async function getWeather() {
+      const city = document.getElementById("city").value;
+      if (!city) return;
+
+      const apiKey = "3318d63e265b4b46895105610262103"; // your key
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&units=metric&appid=${apiKey}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.cod !== 200) {
+          document.getElementById("weatherResult").innerText = "City not found!";
+          return;
+        }
+
+        document.getElementById("weatherResult").innerHTML = `
+          <div class="card">
+            <h3>${data.name} Weather</h3>
+            <p>☀️ ${data.weather[0].description}</p>
+            <p>🌡 Temperature: ${data.main.temp}°C</p>
+            <p>💧 Humidity: ${data.main.humidity}%</p>
+          </div>
+        `;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    // ===== NEWS =====
+    async function loadNews() {
+      const newsList = document.getElementById("newsList");
+      newsList.innerHTML = "Loading...";
+
+      const url = "https://api.spaceflightnewsapi.net/v3/articles?_limit=6";
+
+      try {
+        const res = await fetch(url);
+        const articles = await res.json();
+
+        newsList.innerHTML = "";
+        articles.forEach(item => {
+          newsList.innerHTML += `
+            <div class="news-item card">
+              <h4><a href="${item.url}" target="_blank" style="color:#81ecec;">${item.title}</a></h4>
+              <p>${item.summary.substring(0, 140)}...</p>
+            </div>
+          `;
+        });
+      } catch (e) {
+        newsList.innerText = "Failed to load news.";
+      }
+    }
+    loadNews();
+
+    // ===== AI ASSISTANT =====
+    async function askAI() {
+      const prompt = document.getElementById("aiQuestion").value;
+      const out = document.getElementById("aiAnswer");
+      if (!prompt) return;
+
+      out.innerText = "Thinking... 🚀";
+
+      const apiKey = "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"; // your Hugging Face key
+
+      try {
+        const res = await fetch("https://api-inference.huggingface.co/models/gpt2", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ inputs: prompt })
+        });
+        const data = await res.json();
+        out.innerText = data[0]?.generated_text || "No response!";
+      } catch (e) {
+        out.innerText = "AI Error!";
+        console.error(e);
+      }
+    }
+  </script>
+
+</body>
+</html>
